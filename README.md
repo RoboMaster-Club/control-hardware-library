@@ -12,3 +12,6 @@ cd FOLDER-NAME
 git status
 ```
 You should be able to view git information about this library.
+## Modifications
+- Change ```samepleFreq``` in [MahonyAHRS.c](Algo/Src/MahonyAHRS.c?plain=1#L23), this will affect the fusion result
+- Initialize a task for imu in FreeRTOS environment
