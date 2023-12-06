@@ -17,6 +17,7 @@
 
 typedef struct 
 {
+    uint8_t CAN_ID;
     CAN_TxHeaderTypeDef tx_header;
     uint8_t data[8];
 } CAN_Tx_Pack_t;
