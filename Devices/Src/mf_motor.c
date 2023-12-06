@@ -46,6 +46,13 @@ void MF_Motor_EnableMotor(CAN_HandleTypeDef *hcanx, uint8_t id)
 {
     uint8_t data[8];
     data[0] = 0x88;
+    data[1] = 0x00;
+    data[2] = 0x00;
+    data[3] = 0x00;
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = 0x00;
     CAN_BSP_SendTOQueue(hcanx, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
@@ -53,6 +60,13 @@ void MF_Motor_DisableMotor(CAN_HandleTypeDef *hcanx, uint8_t id)
 {
     uint8_t data[8];
     data[0] = 0x80;
+    data[1] = 0x00;
+    data[2] = 0x00;
+    data[3] = 0x00;
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = 0x00;
     CAN_BSP_SendTOQueue(hcanx, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
