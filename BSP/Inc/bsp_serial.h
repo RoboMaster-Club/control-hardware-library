@@ -10,7 +10,7 @@
 PUTCHAR_PROTOTYPE
 {
     HAL_UART_Transmit(&huart6, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-    while(!huart6.Instance->SR & UART_FLAG_IDLE);
+    //while(!huart6.Instance->SR & UART_FLAG_IDLE);
     return ch;
 }
 #endif
