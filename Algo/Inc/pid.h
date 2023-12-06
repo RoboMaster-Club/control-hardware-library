@@ -21,5 +21,5 @@ typedef struct pid_t
 
 extern void PID_Init(PID_t *pid, float kp, float ki, float kd, float output_max, float ki_max, float dead_zone);
 extern void PID_Reset(PID_t *pid);
-extern float PID(PID_t *pid, float error);
+extern float PID_Output(PID_t *pid, float error);
 #endif

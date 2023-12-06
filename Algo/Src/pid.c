@@ -2,7 +2,7 @@
 
 void PID_Init(PID_t *pid, float kp, float ki, float kd, float output_max, float ki_max, float dead_zone);
 void PID_Reset(PID_t *pid);
-float PID(PID_t *pid, float error);
+float PID_Output(PID_t *pid, float error);
 
 void PID_Init(PID_t *pid, float kp, float ki, float kd, float output_max, float ki_max, float dead_zone)
 {
@@ -24,7 +24,7 @@ void PID_Reset(PID_t *pid)
     pid->error_sum = 0;
 }
 
-float PID(PID_t *pid, float error)
+float PID_Output(PID_t *pid, float error)
 {
     if (fabs(error) < pid->dead_zone) error = 0;
     pid->error_sum += error;
