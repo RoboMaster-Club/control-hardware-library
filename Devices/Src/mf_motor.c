@@ -34,7 +34,12 @@ void MF_Motor_Decode(uint8_t data[8], MF_MOTOR_INFO_t *motor_info)
 
     case 0xA1:
     case 0xA2:
-        motor_info->angle = (data[7] << 8) + data[6];
+        motor_info->last_angle = motor_info->angle;
+        motor_info->angle = (data[7] << 8) + data[6];  
+        if ((motor_info->angle - motor_info->last_angle) > MF_MAX_TICKS / 2.0f) motor_info->turn_count--;
+        else if ((motor_info->angle - motor_info->last_angle) < -MF_MAX_TICKS / 2.0f) motor_info->turn_count++;
+        motor_info->total_angle = (motor_info->turn_count * MF_MAX_TICKS + motor_info->angle) * 360.0f / MF_MAX_TICKS;
+
         motor_info->velocity = (data[5] << 8) + data[4];
         motor_info->current = (data[3] << 8) + data[2];
         motor_info->temp = data[1];

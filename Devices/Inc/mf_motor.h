@@ -4,6 +4,9 @@
 #include "bsp_can.h"
 
 #define SINGLE_MOTOR_CTRL_STD 0x140
+#define MF_MAX_TICKS (65536)
+#define MF4310_TORQ_CONST 0.1f
+#define CURRENT_TO_CTRL_INT 124.121212f
 
 typedef struct MF_MOTOR_INFO
 {
@@ -12,6 +15,10 @@ typedef struct MF_MOTOR_INFO
     int16_t velocity;
     int16_t current;
     int8_t temp;
+
+    int16_t turn_count;
+    float total_angle;
+    uint16_t last_angle;
 
     uint16_t kp_ang;
     uint16_t ki_ang;
