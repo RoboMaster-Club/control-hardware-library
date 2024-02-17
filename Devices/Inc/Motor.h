@@ -10,7 +10,7 @@
 #ifndef __MOTOR_H
 #define __MOTOR_H
 
-#include "CAN_Setup.h"
+#include "bsp_can.h"
 
 /**
 enum to control motor type

@@ -12,7 +12,7 @@
 #define __M3508_MOTOR_H
 
 #include "can.h"
-#include "CAN_Setup.h"
+#include "bsp_can.h"
 #include <stdint.h>
 #include <stdio.h>
 
