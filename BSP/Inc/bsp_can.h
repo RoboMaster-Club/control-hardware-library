@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "robot_param.h"
-
 #include "dm4310.h"
 #include "mf_motor.h"
 

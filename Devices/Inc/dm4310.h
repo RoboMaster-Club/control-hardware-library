@@ -3,7 +3,7 @@
 
 #include "struct_typedef.h"
 #include "bsp_can.h"
-#include "robot_param.h"
+
 
 #define P_MIN -12.5f
 #define P_MAX 12.5f
