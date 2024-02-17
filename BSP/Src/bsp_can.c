@@ -82,10 +82,17 @@ void CAN_BSP_CAN1Tx(void const *argument)
 
     for (;;)
     {
-        if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 3)
-        {
-            xQueueReceive(can1_tx_queueHandle, &can_tx_pack, portMAX_DELAY);
-            HAL_CAN_AddTxMessage(&hcan1, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
+        if (can_tx_pack.can_bus == 1) {
+            if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 3) {
+                xQueueReceive(can1_tx_queueHandle, &can_tx_pack, portMAX_DELAY);
+                HAL_CAN_AddTxMessage(&hcan1, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
+            }
+        }
+        else if (can_tx_pack.can_bus == 2) {
+            if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan2) == 3) {
+                xQueueReceive(can1_tx_queueHandle, &can_tx_pack, portMAX_DELAY);
+                HAL_CAN_AddTxMessage(&hcan2, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
+            }
         }
 //        vTaskDelayUntil(&xLastWakeTime, TimeIncrement);
     }
