@@ -15,12 +15,14 @@
 
 typedef struct 
 {
+    uint8_t can_bus;
     CAN_TxHeaderTypeDef tx_header;
     uint8_t data[8];
 } CAN_Tx_Pack_t;
 
 typedef struct
 {
+    uint8_t can_bus;
     CAN_RxHeaderTypeDef rx_header;
     uint8_t data[8];
 } CAN_Rx_Pack_t;
