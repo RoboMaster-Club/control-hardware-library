@@ -1,7 +1,7 @@
 #ifndef IST8310DRIVER_MIDDLEWARE_H
 #define IST8310DRIVER_MIDDLEWARE_H
 
-#include "struct_typedef.h"
+#include <stdint.h>
 
 #define IST8310_IIC_ADDRESS (0x0E << 1)
 #define IST8310_IIC_READ_MSB (0x80)

@@ -7,7 +7,7 @@
 #ifndef __REMOTE_H
 #define __REMOTE_H
 
-#include "struct_typedef.h"
+#include <stdint.h>
 
 enum SwitchPos {UP=1, DOWN, MID};
 

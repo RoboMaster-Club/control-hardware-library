@@ -1,7 +1,7 @@
 #ifndef DM4310_H
 #define DM4310_H
 
-#include "struct_typedef.h"
+#include <stdint.h>
 #include "bsp_can.h"
 
 

@@ -1,6 +1,6 @@
 #ifndef ROTOR_H
 #define ROTOR_H
-#include "struct_typedef.h"
+#include <stdint.h>
 
 typedef struct PWM_Pulse
 {

@@ -1,7 +1,7 @@
 #ifndef BMI088DRIVER_H
 #define BMI088DRIVER_H
 
-#include "struct_typedef.h"
+#include <stdint.h>
 #include "main.h"
 
 #define BMI088_TEMP_FACTOR 0.125f
@@ -49,10 +49,10 @@
 typedef struct BMI088_Raw
 {
     uint8_t status;
-    fp32 accel[3];
-    fp32 temp;
-    fp32 gyro[3];
-    fp32 time;
+    float accel[3];
+    float temp;
+    float gyro[3];
+    float time;
 } BMI088_Raw_t;
 
 
@@ -83,22 +83,22 @@ enum
 
 
 extern uint8_t BMI088_init(void);
-extern bool_t bmi088_accel_self_test(void);
-extern bool_t bmi088_gyro_self_test(void);
-extern bool_t bmi088_accel_init(void);
-extern bool_t bmi088_gyro_init(void);
+extern uint8_t bmi088_accel_self_test(void);
+extern uint8_t bmi088_gyro_self_test(void);
+extern uint8_t bmi088_accel_init(void);
+extern uint8_t bmi088_gyro_init(void);
 
-extern void BMI088_accel_read_over(uint8_t *rx_buf, fp32 accel[3], fp32 *time);
-extern void BMI088_gyro_read_over(uint8_t *rx_buf, fp32 gyro[3]);
-extern void BMI088_temperature_read_over(uint8_t *rx_buf, fp32 *temperate);
-extern void BMI088_read(fp32 gyro[3], fp32 accel[3], fp32 *temperate);
+extern void BMI088_accel_read_over(uint8_t *rx_buf, float accel[3], float *time);
+extern void BMI088_gyro_read_over(uint8_t *rx_buf, float gyro[3]);
+extern void BMI088_temperature_read_over(uint8_t *rx_buf, float *temperate);
+extern void BMI088_read(float gyro[3], float accel[3], float *temperate);
 extern uint32_t get_BMI088_sensor_time(void);
-extern fp32 get_BMI088_temperate(void);
+extern float get_BMI088_temperate(void);
 extern void get_BMI088_gyro(int16_t gyro[3]);
-extern void get_BMI088_accel(fp32 accel[3]);
+extern void get_BMI088_accel(float accel[3]);
 
 
-extern void BMI088_read_gyro_who_am_i(void);
-extern void BMI088_read_accel_who_am_i(void);
+extern uint8_t BMI088_read_gyro_who_am_i(void);
+extern uint8_t BMI088_read_accel_who_am_i(void);
 
 #endif
