@@ -2,9 +2,9 @@
 
 
 void DM4310_DecodeCAN(uint8_t data[8], DM4310_Info_t *data_frame);
-void DM4310_EnableMotor(CAN_HandleTypeDef *hcanx, uint32_t id);
-void DM4310_DisableMotor(CAN_HandleTypeDef *hcanx, uint32_t id);
-void DM4310_CtrlMIT(CAN_HandleTypeDef *hcanx, uint32_t id,
+void DM4310_EnableMotor(uint8_t can_bus, uint32_t id);
+void DM4310_DisableMotor(uint8_t can_bus, uint32_t id);
+void DM4310_CtrlMIT(uint8_t can_bus, uint32_t id,
                     float target_pos, float target_vel,
                     float kp, float kd,
                     float torq);
@@ -56,7 +56,7 @@ void DM4310_DecodeCAN(uint8_t data[8], DM4310_Info_t *data_frame)
     data_frame->t_rotor = (float)(data[7]);
 }
 
-void DM4310_EnableMotor(CAN_HandleTypeDef *hcanx, uint32_t id)
+void DM4310_EnableMotor(uint8_t can_bus, uint32_t id)
 {
     uint8_t data[8];
     data[0] = 0xFF;
@@ -67,10 +67,10 @@ void DM4310_EnableMotor(CAN_HandleTypeDef *hcanx, uint32_t id)
     data[5] = 0xFF;
     data[6] = 0xFF;
     data[7] = 0xFC;
-    CAN_BSP_SendTOQueue(hcanx, id, data);
+    CAN_BSP_SendTOQueue(can_bus, id, data);
 }
 
-void DM4310_DisableMotor(CAN_HandleTypeDef *hcanx, uint32_t id)
+void DM4310_DisableMotor(uint8_t can_bus, uint32_t id)
 {
     uint8_t data[8];
     data[0] = 0xFF;
@@ -81,10 +81,10 @@ void DM4310_DisableMotor(CAN_HandleTypeDef *hcanx, uint32_t id)
     data[5] = 0xFF;
     data[6] = 0xFF;
     data[7] = 0xFD;
-    CAN_BSP_SendTOQueue(hcanx, id, data);
+    CAN_BSP_SendTOQueue(can_bus, id, data);
 }
 
-void DM4310_CtrlMIT(CAN_HandleTypeDef *hcanx, uint32_t id,
+void DM4310_CtrlMIT(uint8_t can_bus, uint32_t id,
                     float target_pos, float target_vel,
                     float kp, float kd,
                     float torq)
@@ -106,7 +106,7 @@ void DM4310_CtrlMIT(CAN_HandleTypeDef *hcanx, uint32_t id,
     data[6] = ((kd_temp & 0xF) << 4) | (torq_temp >> 8);
     data[7] = torq_temp;
 
-    CAN_BSP_SendTOQueue(hcanx, id, data);
+    CAN_BSP_SendTOQueue(can_bus, id, data);
 }
 void DM4310_CtrlPosVel()
 {

@@ -21,19 +21,19 @@ typedef struct MF_MOTOR_INFO
     uint16_t ki_torq;
 } MF_MOTOR_INFO_t;
 
-extern void MF_Motor_Decode(uint8_t data[8], MF_MOTOR_INFO_t *motor_info);
-extern void MF_Motor_GetPIDParam(CAN_HandleTypeDef *hcanx, uint8_t id);
-extern void MF_Motor_PIDToRam(CAN_HandleTypeDef *hcanx, uint8_t id,
+void MF_Motor_Decode(uint8_t data[8], MF_MOTOR_INFO_t *motor_info);
+void MF_Motor_GetPIDParam(uint8_t can_bus, uint8_t id);
+void MF_Motor_PIDToRam(uint8_t can_bus, uint8_t id,
                               uint8_t kp_ang, uint8_t ki_ang,
                               uint8_t kp_vel, uint8_t ki_vel,
                               uint8_t kp_torq, uint8_t ki_torq);
-extern void MF_Motor_EnableMotor(CAN_HandleTypeDef *hcanx, uint8_t id);
-extern void MF_Motor_DisableMotor(CAN_HandleTypeDef *hcanx, uint8_t id);
+void MF_Motor_EnableMotor(uint8_t can_bus, uint8_t id);
+void MF_Motor_DisableMotor(uint8_t can_bus, uint8_t id);
 
 /**
  * Write the PID parameters to RAM, parameters are deleted after a power cycle
 */
-extern void MF_Motor_PIDToRam(CAN_HandleTypeDef *hcanx, uint8_t id, 
+void MF_Motor_PIDToRam(uint8_t can_bus, uint8_t id, 
                                                         uint8_t kp_ang, uint8_t ki_ang,
                                                         uint8_t kp_vel, uint8_t ki_vel,
                                                         uint8_t kp_torq, uint8_t ki_torq);
@@ -42,19 +42,19 @@ extern void MF_Motor_PIDToRam(CAN_HandleTypeDef *hcanx, uint8_t id,
  * close loop torq control
  * torq: (-2000, 2000) -> current (-32A, 30A)
 */
-extern void MF_Motor_TorqueCtrl(CAN_HandleTypeDef *hcanx, uint8_t id, int16_t torq);
+void MF_Motor_TorqueCtrl(uint8_t can_bus, uint8_t id, int16_t torq);
 
 /**
  * close loop velocity control
  * vel: 0.01 deg/bit
 */
-extern void MF_Motor_VelocityCtrl(CAN_HandleTypeDef *hcanx, uint8_t id, int32_t vel);
+void MF_Motor_VelocityCtrl(uint8_t can_bus, uint8_t id, int32_t vel);
 
 /**
  * close loop position control
  * 0.01 deg/bit
 */
-extern void MF_Motor_PositionCtrl(CAN_HandleTypeDef *hcanx, uint8_t id, int32_t pos);
+void MF_Motor_PositionCtrl(uint8_t can_bus, uint8_t id, int32_t pos);
 
 
 #endif

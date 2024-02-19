@@ -4,9 +4,9 @@ CAN_RxHeaderTypeDef g_rx_header;
 uint8_t g_can_data[8];
 
 void CAN_BSP_Init(CAN_HandleTypeDef *hcanx);
-void CAN_BSP_SendTOQueue(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8]);
-void CAN_BSP_Send(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8]);
+void CAN_BSP_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
 void CAN_BSP_Receive(CAN_HandleTypeDef *hcanx);
+
 void CAN_BSP_Init(CAN_HandleTypeDef *hcanx)
 {
     /* set the CAN filter */
@@ -30,7 +30,7 @@ void CAN_BSP_Init(CAN_HandleTypeDef *hcanx)
     HAL_CAN_ActivateNotification(hcanx, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
 
-void CAN_BSP_SendTOQueue(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8])
+void CAN_BSP_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8])
 {
     /* Initialize the data pack for queuing*/
     CAN_Tx_Pack_t can_tx_pack;
@@ -44,55 +44,50 @@ void CAN_BSP_SendTOQueue(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8])
     /* Set data */
     memcpy(can_tx_pack.data, data, sizeof(uint8_t[8]));
 
-    if (hcanx->Instance == CAN1)
+    switch (can_bus)
+    {
+    case 1:
         xQueueSend(can1_tx_queueHandle, &can_tx_pack, 0);
-}
-
-void CAN_BSP_Send(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8])
-{
-    /* Initialize send header*/
-    CAN_TxHeaderTypeDef tx_header;
-
-    /* Set tx_header */
-    tx_header.StdId = id;
-    tx_header.IDE = CAN_ID_STD;
-    tx_header.RTR = CAN_RTR_DATA;
-    tx_header.DLC = 0x08;
-
-    HAL_CAN_AddTxMessage(hcanx, &tx_header, data, (uint32_t *)CAN_TX_MAILBOX0);
-}
-
-void CAN_BSP_Receive(CAN_HandleTypeDef *hcanx)
-{
-
-    CAN_Rx_Pack_t can_rx_pack;
-
-    HAL_CAN_GetRxMessage(hcanx, CAN_RX_FIFO0, &g_rx_header, g_can_data);
-    can_rx_pack.rx_header = g_rx_header;
-    memcpy(can_rx_pack.data, g_can_data, sizeof(uint8_t[8]));
-    xQueueSendToBackFromISR(can1_rx_queueHandle, &can_rx_pack, 0);
+        break;
+    case 2:
+        xQueueSend(can2_tx_queueHandle, &can_tx_pack, 0);
+    default:
+        break;
+    }
 }
 
 void CAN_BSP_CAN1Tx(void const *argument)
 {
-//    portTickType xLastWakeTime;
-//    xLastWakeTime = xTaskGetTickCount();
-//    const TickType_t TimeIncrement = pdMS_TO_TICKS(1);
     CAN_Tx_Pack_t can_tx_pack;
-
     for (;;)
     {
         xQueueReceive(can1_tx_queueHandle, &can_tx_pack, portMAX_DELAY);
-        if (can_tx_pack.can_bus == 1) {
-            if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 3) {
-                HAL_CAN_AddTxMessage(&hcan1, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
-            }
+        // Wait for available mailbox
+        while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0)
+            ;
+        HAL_CAN_AddTxMessage(&hcan1, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
+    }
+}
+
+void CAN_BSP_CAN2Tx(void const *argument)
+{
+    CAN_Tx_Pack_t can_tx_pack;
+    for (;;)
+    {
+        xQueueReceive(can2_tx_queueHandle, &can_tx_pack, portMAX_DELAY);
+        // Wait for available mailbox
+        while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan2) == 0);
+        HAL_CAN_AddTxMessage(&hcan2, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
+    }
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_Rx_Pack_t rx_pack;
+    if (HAL_CAN_GetRxMessage(hcan, CAN_FilterFIFO0, &rx_pack.rx_header, rx_pack.data) == HAL_OK) {
+        uint8_t condition = 0; // TODO: match can instance
+        if (condition) {
+            rx_pack.can_module_callback(&rx_pack);
         }
-        else if (can_tx_pack.can_bus == 2) {
-            if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan2) == 3) {
-                HAL_CAN_AddTxMessage(&hcan2, &can_tx_pack.tx_header, can_tx_pack.data, (uint32_t *)CAN_TX_MAILBOX0);
-            }
-        }
-//        vTaskDelayUntil(&xLastWakeTime, TimeIncrement);
     }
 }

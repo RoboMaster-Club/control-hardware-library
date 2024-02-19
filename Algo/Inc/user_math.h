@@ -1,6 +1,8 @@
 #ifndef USER_MATH_H
 #define USER_MATH_H
 
+#define PI (3.1415926f)
+
 #define __MAX_LIMIT(val, min, max)      do\
                                         {\
                                             val =(val > max ? max : val);\

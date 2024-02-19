@@ -66,13 +66,13 @@ typedef struct
 
 } DM4310_Info_t;
 
-extern void DM4310_DecodeCAN(uint8_t data[8], DM4310_Info_t *data_frame);
-extern void DM4310_EnableMotor(CAN_HandleTypeDef *hcanx, uint32_t id);
-extern void DM4310_DisableMotor(CAN_HandleTypeDef *hcanx, uint32_t id);
-extern void DM4310_CtrlMIT(CAN_HandleTypeDef *hcanx, uint32_t id,
-                     float target_pos, float target_vel,
-                     float kp, float kd,
-                     float torq);
-extern void DM4310_CtrlPosVel(void);
-extern void DM4310_CtrlVel(void);
+void DM4310_DecodeCAN(uint8_t data[8], DM4310_Info_t *data_frame);
+void DM4310_EnableMotor(uint8_t can_bus, uint32_t id);
+void DM4310_DisableMotor(uint8_t can_bus, uint32_t id);
+void DM4310_CtrlMIT(uint8_t can_bus, uint32_t id,
+              float target_pos, float target_vel,
+              float kp, float kd,
+              float torq);
+void DM4310_CtrlPosVel(void);
+void DM4310_CtrlVel(void);
 #endif
