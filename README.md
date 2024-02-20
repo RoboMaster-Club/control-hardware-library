@@ -6,6 +6,10 @@ Add the submodule to your project
 ```
 git submodule add <https://github.com/jia-xie/control-hardware-library.git> FOLDER-NAME
 ```
+Initialize the submodule
+```
+git submodule update --init
+```
 The submodule will exist as a folder in the project. In Git environment, it is a link pointing to a specific commit version. To manipulate the library itself, you can open the library directory and treat it as a regular Git repository.
 ```
 cd FOLDER-NAME
