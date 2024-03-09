@@ -1,9 +1,9 @@
 #include "bsp_can.h"
 #include <stdlib.h>
 
-static CAN_Rx_Pack_t *g_can1_rx_packs[CAN_MAX_DEVICE] = {NULL};
+static CAN_Instance_t *g_can1_can_instances[CAN_MAX_DEVICE] = {NULL};
 static uint8_t g_can1_device_count = 0;
-static CAN_Rx_Pack_t *g_can2_rx_packs[CAN_MAX_DEVICE] = {NULL};
+static CAN_Instance_t *g_can2_can_instances[CAN_MAX_DEVICE] = {NULL};
 static uint8_t g_can2_device_count = 0;
 
 CAN_RxHeaderTypeDef g_rx_header;
@@ -11,23 +11,22 @@ uint8_t g_can_data[8];
 
 void CAN_Init(CAN_HandleTypeDef *hcanx);
 void CAN_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
-void CAN_Receive(CAN_HandleTypeDef *hcanx);
 
-void CAN_Filter_Init(CAN_Rx_Pack_t *rx_pack)
+void CAN_Filter_Init(CAN_Instance_t *can_instance)
 {
     /* set the CAN filter */
     CAN_FilterTypeDef can_filter;
     can_filter.FilterMode = CAN_FILTERMODE_IDLIST;
     can_filter.FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter.FilterFIFOAssignment = (rx_pack->rx_id % 1 == 0) ? CAN_FILTER_FIFO0 : CAN_FILTER_FIFO1; // match even can id to FIFO0, odd to FIFO1
-    can_filter.FilterBank = (rx_pack->can_bus == 1) ? g_can1_device_count : g_can2_device_count;
+    can_filter.FilterFIFOAssignment = (can_instance->rx_id % 1 == 0) ? CAN_FILTER_FIFO0 : CAN_FILTER_FIFO1; // match even can id to FIFO0, odd to FIFO1
+    can_filter.FilterBank = (can_instance->can_bus == 1) ? g_can1_device_count : g_can2_device_count;
     can_filter.SlaveStartFilterBank = 0;
     can_filter.FilterActivation = CAN_FILTER_ENABLE;
-    can_filter.FilterIdHigh = (rx_pack->rx_id << 5); // standard id is 11 bit, so shift 5 bits
+    can_filter.FilterIdHigh = (can_instance->rx_id << 5); // standard id is 11 bit, so shift 5 bits
     can_filter.FilterIdLow = 0x0000;                 // the second id is not used
     can_filter.FilterMaskIdHigh = 0x0000;            // the third id is not used
     can_filter.FilterMaskIdLow = 0x0000;             // the fourth id is not used
-    HAL_CAN_ConfigFilter((rx_pack->can_bus == 1) ? &hcan1 : &hcan2, &can_filter);
+    HAL_CAN_ConfigFilter((can_instance->can_bus == 1) ? &hcan1 : &hcan2, &can_filter);
 }
 /**
  * @brief  CAN Device Registration Function
@@ -36,42 +35,42 @@ void CAN_Filter_Init(CAN_Rx_Pack_t *rx_pack)
  * @param can_id can id of the device (0x000 to 0x7FF)
  * @param can_module_callback callback function for the can module
  * 
- * @return CAN_Rx_Pack_t* the pointer to the rx_pack
+ * @return CAN_Instance_t* the pointer to the can_instance
 */
-CAN_Rx_Pack_t *CAN_Device_Register(uint8_t can_bus, uint16_t can_id, void (*can_module_callback)(CAN_Rx_Pack_t *rx_pack))
+CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t can_id, void (*can_module_callback)(CAN_Instance_t *can_instance))
 {
-    CAN_Rx_Pack_t *rx_pack = malloc(sizeof(CAN_Rx_Pack_t));
+    CAN_Instance_t *can_instance = malloc(sizeof(CAN_Instance_t));
     
     // define can bus, can id, callback function
-    rx_pack->can_bus = can_bus;
-    rx_pack->rx_id = can_id;
-    rx_pack->can_module_callback = can_module_callback;
+    can_instance->can_bus = can_bus;
+    can_instance->rx_id = can_id;
+    can_instance->can_module_callback = can_module_callback;
     
     // allocate memory for tx_header and rx_header
-    rx_pack->tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-    rx_pack->tx_header->StdId = can_id;
-    rx_pack->tx_header->IDE = CAN_ID_STD;
-    rx_pack->tx_header->RTR = CAN_RTR_DATA;
-    rx_pack->tx_header->DLC = 0x08;
+    can_instance->tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+    can_instance->tx_header->StdId = can_id;
+    can_instance->tx_header->IDE = CAN_ID_STD;
+    can_instance->tx_header->RTR = CAN_RTR_DATA;
+    can_instance->tx_header->DLC = 0x08;
 
-    // assign pointer to the rx_pack to the global array
+    // assign pointer to the can_instance to the global array
     switch (can_bus)
     {
     case 1:
         g_can1_device_count++;
-        g_can1_rx_packs[can_id] = rx_pack;
+        g_can1_can_instances[can_id] = can_instance;
         break;
     case 2:
         g_can2_device_count++;
-        g_can2_rx_packs[can_id] = rx_pack;
+        g_can2_can_instances[can_id] = can_instance;
         break;
     default:
         // TODO: LOG can bus need to be 1 or 2
         break;
     }
     
-    CAN_Filter_Init(rx_pack);
-    return rx_pack;
+    CAN_Filter_Init(can_instance);
+    return can_instance;
 }
 
 void CAN_Service_Init()
@@ -87,15 +86,13 @@ void CAN_Service_Init()
     HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING);
 }
 
-HAL_StatusTypeDef CAN_Transmit(CAN_Rx_Pack_t *rx_pack)
+HAL_StatusTypeDef CAN_Transmit(CAN_Instance_t *can_instance)
 {
-    CAN_HandleTypeDef *hcanx = (rx_pack->can_bus == 1) ? &hcan1 : &hcan2;
+    CAN_HandleTypeDef *hcanx = (can_instance->can_bus == 1) ? &hcan1 : &hcan2;
     // Wait for available mailbox
     while (HAL_CAN_GetTxMailboxesFreeLevel(hcanx) == 0);
-    return HAL_CAN_AddTxMessage(hcanx, rx_pack->tx_header, rx_pack->tx_buffer, (uint32_t *)CAN_TX_MAILBOX0);
+    return HAL_CAN_AddTxMessage(hcanx, can_instance->tx_header, can_instance->tx_buffer, (uint32_t *)CAN_TX_MAILBOX0);
 }
-
-
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
@@ -109,10 +106,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         case 1:
             for (uint8_t i = 0; i < g_can1_device_count; i++)
             {
-                if (g_can1_rx_packs[i]->rx_id == rx_header.StdId)
+                if (g_can1_can_instances[i]->rx_id == rx_header.StdId)
                 {
-                    memmove(g_can1_rx_packs[i]->rx_buffer, can_rx_buff, 8);
-                    g_can1_rx_packs[i]->can_module_callback(g_can1_rx_packs[i]);
+                    memmove(g_can1_can_instances[i]->rx_buffer, can_rx_buff, 8);
+                    g_can1_can_instances[i]->can_module_callback(g_can1_can_instances[i]);
                     break;
                 }
             }
@@ -120,10 +117,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         case 2:
             for (uint8_t i = 0; i < g_can2_device_count; i++)
             {
-                if (g_can2_rx_packs[i]->rx_id == rx_header.StdId)
+                if (g_can2_can_instances[i]->rx_id == rx_header.StdId)
                 {
-                    memmove(g_can2_rx_packs[i]->rx_buffer, can_rx_buff, 8);
-                    g_can2_rx_packs[i]->can_module_callback(g_can2_rx_packs[i]);
+                    memmove(g_can2_can_instances[i]->rx_buffer, can_rx_buff, 8);
+                    g_can2_can_instances[i]->can_module_callback(g_can2_can_instances[i]);
                     break;
                 }
             }

@@ -91,10 +91,4 @@ typedef struct IMU
 
 extern IMU_t g_imu;
 
-/**
- * FreeRTOS Entry Function
- * @note Add Task and state the entry function in @FreeRTOS.c
- */
-extern void IMU_Task(void const *pvParameters);
-
 #endif

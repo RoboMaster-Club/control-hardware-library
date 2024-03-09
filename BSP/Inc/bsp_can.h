@@ -23,7 +23,8 @@ typedef struct _
     uint8_t tx_buffer[8];
     uint8_t rx_buffer[8];
     void (*can_module_callback)(struct _ *);
-} CAN_Rx_Pack_t;
+    void *binding_motor_stats;
+} CAN_Instance_t;
 
 /*
  * Init the filter and start CAN communication 
@@ -40,5 +41,6 @@ void CAN_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
  */
 void CAN_Send(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8]);
 
-void CAN_Receive(CAN_HandleTypeDef *hcanx);
+
+CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t can_id, void (*can_module_callback)(CAN_Instance_t *can_instance));
 #endif
