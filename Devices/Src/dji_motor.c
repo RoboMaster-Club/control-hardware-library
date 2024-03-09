@@ -47,9 +47,8 @@ void DJI_Motor_Send(DJI_Send_Type_e send_type, uint8_t can_bus, int16_t motor1, 
  * speed unit rmpm
  * temp unit degree celcius
 */
-void DJI_Motor_Decode(DJI_Motor_t *motor, CAN_Rx_Pack_t *rx_pack) {
+void DJI_Motor_Decode(DJI_Motor_t *motor, uint8_t data[8]) {
     /* CAN Frame Process*/
-    uint8_t *data = rx_pack->data;
     motor->last_tick = motor->current_tick;
     motor->current_tick = data[0] << 8 | data[1];
     motor->current_vel = data[2] << 8 | data[3];
