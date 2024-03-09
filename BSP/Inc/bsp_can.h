@@ -1,5 +1,5 @@
-#ifndef CAN_BSP_H
-#define CAN_BSP_H
+#ifndef CAN_H
+#define CAN_H
 
 #include "FreeRTOS.h"
 #include "can.h"
@@ -13,6 +13,8 @@
 #include "dm4310.h"
 #include "mf_motor.h"
 
+#define CAN_MAX_DEVICE 5
+
 typedef struct 
 {
     uint8_t can_bus;
@@ -22,7 +24,9 @@ typedef struct
 
 typedef struct _
 {
+     can_bus;
     CAN_RxHeaderTypeDef rx_header;
+    uint16_t rx_id;
     uint8_t data[8];
     void (*can_module_callback)(struct _ *);
 } CAN_Rx_Pack_t;
@@ -34,17 +38,17 @@ extern osMessageQId can2_rx_queueHandle;
 /*
  * Init the filter and start CAN communication 
  */
-void CAN_BSP_Init(CAN_HandleTypeDef *hcanx);
+void CAN_Init(CAN_HandleTypeDef *hcanx);
 
 /*
  * Send the can message to Message Queue
  */
-void CAN_BSP_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
+void CAN_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
 
 /*
  * Send the can message
  */
-void CAN_BSP_Send(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8]);
+void CAN_Send(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8]);
 
-void CAN_BSP_Receive(CAN_HandleTypeDef *hcanx);
+void CAN_Receive(CAN_HandleTypeDef *hcanx);
 #endif

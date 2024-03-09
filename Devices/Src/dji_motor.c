@@ -35,7 +35,7 @@ void DJI_Motor_Send(DJI_Send_Type_e send_type, uint8_t can_bus, int16_t motor1, 
     data[5] = motor3;
     data[6] = motor4 << 8;
     data[7] = motor4;
-    CAN_BSP_SendTOQueue(can_bus, 0x1ff + send_type, data); 
+    CAN_SendTOQueue(can_bus, 0x1ff + send_type, data); 
 }
 
 
