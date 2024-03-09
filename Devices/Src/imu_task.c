@@ -13,9 +13,10 @@ static void imu_cmd_spi_dma(void);
 
 void IMU_Task_Init(IMU_t *imu);
 void IMU_Task_Process(IMU_t *imu);
-
+void IMU_Task_Temp();
 
 extern SPI_HandleTypeDef hspi1;
+extern TIM_HandleTypeDef htim10;
 
 static TaskHandle_t imu_task_local_handler;
 
@@ -36,6 +37,7 @@ volatile uint8_t mag_update_flag = 0;
 volatile uint8_t imu_start_dma_flag = 0;
 
 IMU_t g_imu;
+PID_t g_imu_temp_pid;
 
 void IMU_Task(void const *pvParameters)
 {
@@ -55,6 +57,9 @@ void IMU_Task(void const *pvParameters)
 
 void IMU_Task_Init(IMU_t *imu)
 {
+    PID_Init(&g_imu_temp_pid, 1600.0f, 0.2f, 0, 4500, 4400, 0);
+    HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+
     /* This is the handle of imu task, task will be suspended until waken up*/
     imu_task_local_handler = xTaskGetHandle(pcTaskGetName(NULL));
 
@@ -125,6 +130,26 @@ void IMU_Task_Process(IMU_t *imu)
     imu->deg.yaw = imu->rad.yaw * RAD_TO_DEG;
     imu->deg.pitch = imu->rad.pitch * RAD_TO_DEG;
     imu->deg.roll = imu->rad.roll * RAD_TO_DEG;
+
+    IMU_Task_Temp();
+}
+
+void IMU_Task_Temp() {
+    static uint8_t start_complete = 0;
+    if (g_imu.bmi088_raw.temp > 40.0f) {start_complete = 1;}
+    switch (start_complete)
+    {
+    case 1:
+        uint16_t temp_pwm = (uint16_t) PID(&g_imu_temp_pid, 40 - g_imu.bmi088_raw.temp);
+        __HAL_TIM_SetCompare(&htim10, TIM_CHANNEL_1, temp_pwm);
+        break;
+    case 0:
+        __HAL_TIM_SetCompare(&htim10, TIM_CHANNEL_1, 4999);
+        break;
+
+    default:
+        break;
+    }
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
