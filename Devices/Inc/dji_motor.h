@@ -6,9 +6,16 @@
 
 
 #define MAX_DJI_MOTORS (16) // realloac will be called to shrink the array
+#define MAX_DJI_MOTOR_GROUPS ()
 
 #define DJI_MAX_TICKS (8191.0f)
 #define DJI_HALF_MAX_TICKS (4096)
+
+typedef enum DJI_Motor_Type {
+    GM6020,
+    M3508,
+    M2006,
+} DJI_Motor_Type_t;
 
 typedef struct DJI_Motor_Stats_s {
     /* CAN Frame Info */
@@ -49,5 +56,5 @@ typedef enum {
 } DJI_Send_Type_e;
 
 
-DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config);
+DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type);
 #endif

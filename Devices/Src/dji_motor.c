@@ -10,7 +10,7 @@ uint8_t g_dji_motor_count = 0;
 
 void DJI_Motor_Decode(CAN_Instance_t *can_instance);
 
-DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config)
+DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type)
 {
     DJI_Motor_Handle_t *motor_handle = malloc(sizeof(DJI_Motor_Handle_t));
 
@@ -55,7 +55,23 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config)
 
     CAN_Instance_t* binding_instance = CAN_Device_Register(config->can_bus, config->can_id, DJI_Motor_Decode);
     binding_instance->binding_motor_stats = motor_stats;
+    g_dji_motors[g_dji_motor_count++] = motor_handle;
     return motor_handle;
+}
+
+void DJI_Motor_Set_Ref(DJI_Motor_Handle_t *motor_handle, float ref)
+{
+    switch (motor_handle->control_type)
+    {
+    case SPEED_CONTROL:
+        motor_handle->speed_pid->ref = ref;
+        break;
+    case POSITION_CONTROL:
+        motor_handle->position_pid->ref = ref;
+        break;
+    default:
+        break;
+    }
 }
 
 void DJI_Motor_Control(DJI_Motor_Handle_t *motor_handle, float ref)
