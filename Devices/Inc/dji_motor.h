@@ -7,11 +7,15 @@
 
 
 #define MAX_DJI_MOTORS (16) // realloac will be called to shrink the array
-#define MAX_DJI_MOTOR_GROUPS ()
+#define MAX_DJI_MOTOR_GROUPS (6) // realloac will be called to shrink the array
 #define DJI_TX_ID_PLACEHOLDER (0x00)
 
 #define DJI_MAX_TICKS (8191.0f)
 #define DJI_HALF_MAX_TICKS (4096)
+
+#define M3508_REDUCTION_RATIO (187.0f/3591.0f)
+#define GM6020_REDUCTION_RATIO (1)
+#define M2006_REDUCTION_RATIO (1.0f/36.0f)
 
 typedef enum DJI_Motor_Type {
     GM6020,
@@ -23,15 +27,18 @@ typedef struct DJI_Motor_Stats_s {
     /* CAN Frame Info */
     uint16_t current_tick;
 	uint16_t last_tick;
-	int16_t current_vel;
+	int16_t current_vel_rpm;
 	int16_t current_torq;
     uint8_t temp;
 	
     /* Function Varaibles */
     uint16_t encoder_offset;
     int32_t total_round;
+    float current_vel_dps;
+    float prev_vel_dps;
     float absolute_angle_rad;
     float total_angle_rad;
+    float reduction_ratio;
 } DJI_Motor_Stats_t;
 
 
@@ -44,6 +51,8 @@ typedef struct dji_motor
     /* Motor Config */
     Motor_Control_t control_type;
     Motor_Reversal_t is_reversed;
+    uint8_t vel_unit_rpm;
+    uint8_t pos_abs_ctrl;
     DJI_Motor_Stats_t *stats;
 
     /* Motor Controller */
@@ -51,7 +60,11 @@ typedef struct dji_motor
     PID_t *speed_pid;
     PID_t *torque_pid;
 
-    uint16_t output_current;
+    int16_t output_current;
+
+    void (*set_current)(struct dji_motor *motor, float current);
+    void (*set_speed)(struct dji_motor *motor, float speed);
+    void (*set_position)(struct dji_motor *motor, float position);
 } DJI_Motor_Handle_t;
 
 typedef enum{
@@ -65,8 +78,9 @@ typedef enum {
 typedef struct _DJI_Send_Group_s {
     uint8_t register_device_indicator;
     CAN_Instance_t *can_instance;
-    uint16_t *motor_torq[4];
+    int16_t *motor_torq[4];
 } DJI_Send_Group_t;
 
 DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type);
+void DJI_Motor_Send(void);
 #endif

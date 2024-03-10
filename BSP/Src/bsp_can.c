@@ -14,18 +14,19 @@ void CAN_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
 
 void CAN_Filter_Init(CAN_Instance_t *can_instance)
 {
+    static uint8_t can1_filter_count = 0, can2_filter_count = 14;
     /* set the CAN filter */
     CAN_FilterTypeDef can_filter;
-    can_filter.FilterMode = CAN_FILTERMODE_IDLIST;
-    can_filter.FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter.FilterFIFOAssignment = (can_instance->rx_id % 1 == 0) ? CAN_FILTER_FIFO0 : CAN_FILTER_FIFO1; // match even can id to FIFO0, odd to FIFO1
-    can_filter.FilterBank = (can_instance->can_bus == 1) ? g_can1_device_count : g_can2_device_count;
-    can_filter.SlaveStartFilterBank = 0;
+    can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+    can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
+    can_filter.FilterFIFOAssignment = ((can_instance->rx_id & 1) == 0) ? CAN_FILTER_FIFO0 : CAN_FILTER_FIFO1; // match even can id to FIFO0, odd to FIFO1
+    can_filter.FilterBank = (can_instance->can_bus == 1) ? can1_filter_count++ : can2_filter_count++;
+    can_filter.SlaveStartFilterBank = 14; // CAN 2 is the slave of CAN 1, distribute 0-13 to CAN 1, 14-27 to CAN 2
     can_filter.FilterActivation = CAN_FILTER_ENABLE;
-    can_filter.FilterIdHigh = (can_instance->rx_id << 5); // standard id is 11 bit, so shift 5 bits
-    can_filter.FilterIdLow = 0x0000;                 // the second id is not used
-    can_filter.FilterMaskIdHigh = 0x0000;            // the third id is not used
-    can_filter.FilterMaskIdLow = 0x0000;             // the fourth id is not used
+    can_filter.FilterIdHigh = 0; //can_instance->rx_id << 5;                // standard id is 11 bit, so shift 5 bits
+    can_filter.FilterIdLow = 0;                 // the second id is not used
+    can_filter.FilterMaskIdHigh = 0;            // the third id is not used
+    can_filter.FilterMaskIdLow = 0;             // the fourth id is not used
     HAL_CAN_ConfigFilter((can_instance->can_bus == 1) ? &hcan1 : &hcan2, &can_filter);
 }
 /**
@@ -37,24 +38,24 @@ void CAN_Filter_Init(CAN_Instance_t *can_instance)
  * 
  * @return CAN_Instance_t* the pointer to the can_instance
 */
-CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t tx_id, uint16_t rx_id, void (*can_module_callback)(CAN_Instance_t *can_instance))
+CAN_Instance_t *CAN_Device_Register(uint8_t _can_bus, uint16_t _tx_id, uint16_t _rx_id, void (*can_module_callback)(CAN_Instance_t *can_instance))
 {
     CAN_Instance_t *can_instance = malloc(sizeof(CAN_Instance_t));
     
     // define can bus, can id, callback function
-    can_instance->can_bus = can_bus;
-    can_instance->rx_id = rx_id;
+    can_instance->can_bus = _can_bus;
+    can_instance->rx_id = _rx_id;
     can_instance->can_module_callback = can_module_callback;
     
     // allocate memory for tx_header and rx_header
     can_instance->tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-    can_instance->tx_header->StdId = tx_id;
+    can_instance->tx_header->StdId = _tx_id;
     can_instance->tx_header->IDE = CAN_ID_STD;
     can_instance->tx_header->RTR = CAN_RTR_DATA;
     can_instance->tx_header->DLC = 0x08;
 
     // assign pointer to the can_instance to the global array
-    switch (can_bus)
+    switch (_can_bus)
     {
     case 1:
         g_can1_can_instances[g_can1_device_count++] = can_instance;
@@ -92,11 +93,10 @@ HAL_StatusTypeDef CAN_Transmit(CAN_Instance_t *can_instance)
     return HAL_CAN_AddTxMessage(hcanx, can_instance->tx_header, can_instance->tx_buffer, (uint32_t *)CAN_TX_MAILBOX0);
 }
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
+void CAN_Rx_Callback(CAN_HandleTypeDef *hcan, uint8_t fifo_num) {
     static CAN_RxHeaderTypeDef rx_header;
     uint8_t can_rx_buff[8];
-    if (HAL_CAN_GetRxMessage(hcan, CAN_FilterFIFO0, &rx_header, can_rx_buff) == HAL_OK)
+    if (HAL_CAN_GetRxMessage(hcan, fifo_num, &rx_header, can_rx_buff) == HAL_OK)
     {
         uint8_t can_bus = (hcan->Instance == hcan1.Instance) ? 1 : 2;
         switch (can_bus)
@@ -128,4 +128,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             break;
         }
     }
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_Rx_Callback(hcan, CAN_RX_FIFO0);
+}
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_Rx_Callback(hcan, CAN_RX_FIFO1);
 }
