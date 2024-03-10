@@ -37,18 +37,18 @@ void CAN_Filter_Init(CAN_Instance_t *can_instance)
  * 
  * @return CAN_Instance_t* the pointer to the can_instance
 */
-CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t can_id, void (*can_module_callback)(CAN_Instance_t *can_instance))
+CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t tx_id, uint16_t rx_id, void (*can_module_callback)(CAN_Instance_t *can_instance))
 {
     CAN_Instance_t *can_instance = malloc(sizeof(CAN_Instance_t));
     
     // define can bus, can id, callback function
     can_instance->can_bus = can_bus;
-    can_instance->rx_id = can_id;
+    can_instance->rx_id = rx_id;
     can_instance->can_module_callback = can_module_callback;
     
     // allocate memory for tx_header and rx_header
     can_instance->tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-    can_instance->tx_header->StdId = can_id;
+    can_instance->tx_header->StdId = tx_id;
     can_instance->tx_header->IDE = CAN_ID_STD;
     can_instance->tx_header->RTR = CAN_RTR_DATA;
     can_instance->tx_header->DLC = 0x08;
@@ -57,12 +57,10 @@ CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t can_id, void (*can
     switch (can_bus)
     {
     case 1:
-        g_can1_device_count++;
-        g_can1_can_instances[can_id] = can_instance;
+        g_can1_can_instances[g_can1_device_count++] = can_instance;
         break;
     case 2:
-        g_can2_device_count++;
-        g_can2_can_instances[can_id] = can_instance;
+        g_can2_can_instances[g_can2_device_count++] = can_instance;
         break;
     default:
         // TODO: LOG can bus need to be 1 or 2

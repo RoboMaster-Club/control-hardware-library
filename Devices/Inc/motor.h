@@ -19,10 +19,12 @@ typedef enum Motor_Control_e
     MIT_CONTROL = 0b111,
 } Motor_Control_t;
 
-typedef struct Motor_Config_s
+typedef struct
 {
     uint8_t can_bus;
-    uint8_t can_id;
+    uint16_t tx_id; // ignore this for 
+    uint16_t rx_id; // use can_id for general devices
+    uint8_t speed_controller_id; // use speed_contrller_id for dji motors
     uint16_t offset;
 
     Motor_Reversal_t reversal;
