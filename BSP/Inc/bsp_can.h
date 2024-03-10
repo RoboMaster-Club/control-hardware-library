@@ -42,5 +42,6 @@ void CAN_SendTOQueue(uint8_t can_bus, uint32_t id, uint8_t data[8]);
 void CAN_Send(CAN_HandleTypeDef *hcanx, uint32_t id, uint8_t data[8]);
 
 
-CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t can_id, void (*can_module_callback)(CAN_Instance_t *can_instance));
+CAN_Instance_t *CAN_Device_Register(uint8_t can_bus, uint16_t tx_id, uint16_t rx_id, void (*can_module_callback)(CAN_Instance_t *can_instance));
+void CAN_Service_Init(void);
 #endif
