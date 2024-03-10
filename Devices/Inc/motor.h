@@ -4,20 +4,15 @@
 #include "pid.h"
 #include <stdint.h>
 
+#define SPEED_CONTROL (0b001)
+#define POSITION_CONTROL (0b010)
+#define TORQUE_CONTROL (0b100)
+
 typedef enum Motor_Reversal_e
 {
     MOTOR_REVERSAL_NORMAL,
     MOTOR_REVERSAL_REVERSED
 } Motor_Reversal_t;
-
-typedef enum Motor_Control_e
-{
-    SPEED_CONTROL = 0b001,
-    POSITION_CONTROL = 0b010,
-    TORQUE_CONTROL = 0b100,
-    POSITION_SPEED_CONTROL = 0b011,
-    MIT_CONTROL = 0b111,
-} Motor_Control_t;
 
 typedef struct
 {
@@ -29,7 +24,7 @@ typedef struct
     uint8_t vel_unit_rpm; // 0 for dps, 1 for rpm
     uint8_t pos_abs_ctrl; // 0 for total angle, 1 for absolute
     Motor_Reversal_t reversal;
-    Motor_Control_t control_mode;
+    uint8_t control_mode;
 
     PID_t position_pid;
     PID_t speed_pid;

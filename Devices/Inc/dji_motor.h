@@ -49,7 +49,7 @@ typedef struct dji_motor
     uint8_t speed_controller_id;
     
     /* Motor Config */
-    Motor_Control_t control_type;
+    uint8_t control_type;
     Motor_Reversal_t is_reversed;
     uint8_t vel_unit_rpm;
     uint8_t pos_abs_ctrl;
