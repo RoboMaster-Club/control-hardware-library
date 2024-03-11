@@ -15,6 +15,7 @@ void DJI_Motor_Decode(CAN_Instance_t *can_instance);
 void DJI_Set_Position(DJI_Motor_Handle_t *motor_handle, float pos);
 void DJI_Set_Speed(DJI_Motor_Handle_t *motor_handle, float speed);
 void DJI_Set_Torque(DJI_Motor_Handle_t *motor_handle, float torque);
+void DJI_Motor_Disable(DJI_Motor_Handle_t *motor_handle);
 
 uint8_t DJI_Motor_Assign_To_Group(DJI_Motor_Handle_t *motor_handle, uint16_t tx_id)
 {
@@ -30,15 +31,15 @@ uint8_t DJI_Motor_Assign_To_Group(DJI_Motor_Handle_t *motor_handle, uint16_t tx_
     // }
     for (int i = 0; i < g_dji_motor_group_count; i++)
     {
-        if ((g_dji_send_group[i]->can_instance->can_bus == can_bus) && (
-            g_dji_send_group[i]->can_instance->tx_header->StdId == tx_id))
+        if ((g_dji_send_group[i]->can_instance->can_bus == can_bus) && (g_dji_send_group[i]->can_instance->tx_header->StdId == tx_id))
         {
             g_dji_send_group[i]->register_device_indicator |= (1 << (((motor_handle->speed_controller_id) % 4) - 1));
+            g_dji_send_group[i]->motor_torq[motor_handle->speed_controller_id % 4 - 1] = &motor_handle->output_current;
             return 0;
         }
     }
     // if reach here, create a new group
-    DJI_Send_Group_t *new_group = (DJI_Send_Group_t*) malloc(sizeof(DJI_Send_Group_t));
+    DJI_Send_Group_t *new_group = (DJI_Send_Group_t *)malloc(sizeof(DJI_Send_Group_t));
     new_group->can_instance = calloc(sizeof(CAN_Instance_t), 1);
     new_group->can_instance->can_bus = can_bus;
     new_group->can_instance->tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
@@ -64,10 +65,11 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     motor_handle->pos_abs_ctrl = config->pos_abs_ctrl;
     motor_handle->control_type = config->control_mode;
     motor_handle->is_reversed = config->reversal;
-    
+
     motor_handle->set_current = DJI_Set_Torque;
     motor_handle->set_speed = DJI_Set_Speed;
     motor_handle->set_position = DJI_Set_Position;
+    motor_handle->disable = DJI_Motor_Disable;
 
     DJI_Motor_Stats_t *motor_stats = malloc(sizeof(DJI_Motor_Stats_t));
     motor_stats->encoder_offset = config->offset;
@@ -80,22 +82,22 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     motor_stats->temp = 0;
     motor_handle->stats = motor_stats;
     motor_handle->output_current = 0;
-    
+
     switch (config->control_mode)
     {
     case SPEED_CONTROL:
         motor_handle->speed_pid = malloc(sizeof(PID_t));
-        memmove(motor_handle->speed_pid, &config->speed_pid, sizeof(PID_t));
+        memcpy(motor_handle->speed_pid, &config->speed_pid, sizeof(PID_t));
         break;
     case POSITION_CONTROL:
         motor_handle->position_pid = malloc(sizeof(PID_t));
-        memmove(motor_handle->position_pid, &config->position_pid, sizeof(PID_t));
+        memcpy(motor_handle->position_pid, &config->position_pid, sizeof(PID_t));
         break;
     case SPEED_CONTROL | POSITION_CONTROL:
         motor_handle->speed_pid = malloc(sizeof(PID_t));
         motor_handle->position_pid = malloc(sizeof(PID_t));
-        memmove(motor_handle->speed_pid, &config->speed_pid, sizeof(PID_t));
-        memmove(motor_handle->position_pid, &config->position_pid, sizeof(PID_t));
+        memcpy(motor_handle->speed_pid, &config->speed_pid, sizeof(PID_t));
+        memcpy(motor_handle->position_pid, &config->position_pid, sizeof(PID_t));
         break;
     case TORQUE_CONTROL:
         motor_handle->torque_pid = malloc(sizeof(PID_t));
@@ -114,10 +116,8 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
         break;
     }
 
-    CAN_Instance_t* receiver_can_instance = CAN_Device_Register(config->can_bus, config->tx_id, \
-        0x200 + config->speed_controller_id, DJI_Motor_Decode);
-    receiver_can_instance->binding_motor_stats = motor_stats;
     
+
     // // allocate memory for the g_dji_motors
     // if (g_dji_motors == NULL) {
     //     g_dji_motors = calloc(MAX_DJI_MOTORS, sizeof(DJI_Motor_Handle_t*));
@@ -125,12 +125,15 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     //         //Log Memory allocation failed
     //     }
     // }
-    g_dji_motors[g_dji_motor_count++] = motor_handle;
-
+    
+    CAN_Instance_t *receiver_can_instance = NULL;
     // Send Group assignment
     switch (motor_handle->motor_type)
     {
     case GM6020:
+        receiver_can_instance = CAN_Device_Register(config->can_bus, config->tx_id,
+                                                                0x204 + config->speed_controller_id, DJI_Motor_Decode);
+        receiver_can_instance->binding_motor_stats = motor_stats;
         motor_stats->reduction_ratio = GM6020_REDUCTION_RATIO;
         switch (motor_handle->speed_controller_id)
         {
@@ -151,6 +154,9 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
         }
         break;
     case M3508:
+        receiver_can_instance = CAN_Device_Register(config->can_bus, config->tx_id,
+                                                                0x200 + config->speed_controller_id, DJI_Motor_Decode);
+        receiver_can_instance->binding_motor_stats = motor_stats;
         motor_stats->reduction_ratio = M3508_REDUCTION_RATIO;
         switch (motor_handle->speed_controller_id)
         {
@@ -171,6 +177,9 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
         }
         break;
     case M2006:
+        receiver_can_instance = CAN_Device_Register(config->can_bus, config->tx_id,
+                                                                0x200 + config->speed_controller_id, DJI_Motor_Decode);
+        receiver_can_instance->binding_motor_stats = motor_stats;
         motor_stats->reduction_ratio = M2006_REDUCTION_RATIO;
         switch (motor_handle->speed_controller_id)
         {
@@ -193,41 +202,49 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     default:
         break;
     }
-
+    g_dji_motors[g_dji_motor_count++] = motor_handle;
     return motor_handle;
 }
 
 // void DJI_Motor_Wrap_Up()
 // {
-//     DJI_Motor_Handle_t **dji_motor_shrink_attempt = realloc(g_dji_motors, 
+//     DJI_Motor_Handle_t **dji_motor_shrink_attempt = realloc(g_dji_motors,
 //                             g_dji_motor_count * sizeof(DJI_Motor_Handle_t*));
-//     DJI_Send_Group_t **dji_send_group_shrink_attempt = realloc(g_dji_send_group, 
+//     DJI_Send_Group_t **dji_send_group_shrink_attempt = realloc(g_dji_send_group,
 //                             g_dji_motor_group_count * sizeof(DJI_Send_Group_t*));
 //     if (dji_motor_shrink_attempt != NULL)
 //     {
 //         // if shrink failed, use original g_dji_motors
-//         g_dji_motors = dji_motor_shrink_attempt; 
+//         g_dji_motors = dji_motor_shrink_attempt;
 //     }
 //     if (dji_send_group_shrink_attempt != NULL)
 //     {
 //         // if shrink failed, use original g_dji_send_group
-//         g_dji_send_group = dji_send_group_shrink_attempt; 
+//         g_dji_send_group = dji_send_group_shrink_attempt;
 //     }
 // }
 
 void DJI_Set_Position(DJI_Motor_Handle_t *motor_handle, float pos)
 {
+    motor_handle->disabled = 0;
     motor_handle->position_pid->ref = pos;
 }
 
 void DJI_Set_Speed(DJI_Motor_Handle_t *motor_handle, float speed)
 {
+    motor_handle->disabled = 0;
     motor_handle->speed_pid->ref = speed;
 }
 
 void DJI_Set_Torque(DJI_Motor_Handle_t *motor_handle, float torque)
 {
+    motor_handle->disabled = 0;
     motor_handle->torque_pid->ref = torque;
+}
+
+void DJI_Motor_Disable(DJI_Motor_Handle_t *motor_handle)
+{
+    motor_handle->disabled = 1;
 }
 
 void DJI_Motor_Current_Calc()
@@ -235,13 +252,19 @@ void DJI_Motor_Current_Calc()
     for (int i = 0; i < g_dji_motor_count; i++)
     {
         DJI_Motor_Handle_t *motor = g_dji_motors[i];
-        switch (motor->control_type)
+        switch (motor->disabled)
         {
-        case SPEED_CONTROL:
-            switch (motor->vel_unit_rpm)
+        case 1:
+            motor->output_current = 0;
+            break;
+        case 0:
+            switch (motor->control_type)
             {
+            case SPEED_CONTROL:
+                switch (motor->vel_unit_rpm)
+                {
                 case 1:
-                    motor->output_current = PID(motor->speed_pid, motor->speed_pid->ref - motor->stats->current_vel_rpm);
+                    motor->output_current = PID(motor->speed_pid, motor->speed_pid->ref - (float)motor->stats->current_vel_rpm);
                     break;
                 case 0:
                     motor->output_current = PID(motor->speed_pid, motor->speed_pid->ref - motor->stats->current_vel_dps);
@@ -249,14 +272,24 @@ void DJI_Motor_Current_Calc()
                 default:
                     // Log Error
                     break;
+                }
+                break;
+            case POSITION_CONTROL:
+                float error = motor->position_pid->ref - motor->stats->absolute_angle_rad;
+                if (error >= PI) {
+                    error -= 2 * PI;
+                } else if (error < -PI) {
+                    error += 2 * PI;
+                }
+                motor->output_current = PID(motor->position_pid, error);
+                break;
+            case TORQUE_CONTROL:
+                break;
+            case SPEED_CONTROL | POSITION_CONTROL:
+                break;
+            default:
+                break;
             }
-            break;
-        case POSITION_CONTROL:
-            motor->output_current = PID(motor->position_pid, motor->position_pid->ref - motor->stats->current_tick);
-            break;
-        case TORQUE_CONTROL:
-            break;
-        case SPEED_CONTROL | POSITION_CONTROL:
             break;
         default:
             break;
@@ -293,28 +326,28 @@ void DJI_Motor_Send()
         {
             static int16_t motor1 = 0;
             motor1 = (*(group->motor_torq[0]));
-            data[0] = motor1 << 8;
+            data[0] = motor1 >> 8;
             data[1] = motor1;
         }
         if (register_indicator & 0b0010)
         {
             static int16_t motor2 = 0;
             motor2 = (*(group->motor_torq[1]));
-            data[2] = motor2 << 8;
+            data[2] = motor2 >> 8;
             data[3] = motor2;
         }
         if (register_indicator & 0b0100)
         {
             static int16_t motor3 = 0;
             motor3 = (*(group->motor_torq[2]));
-            data[4] = motor3 << 8;
+            data[4] = motor3 >> 8;
             data[5] = motor3;
         }
         if (register_indicator & 0b1000)
         {
             static int16_t motor4 = 0;
             motor4 = (*(group->motor_torq[3]));
-            data[6] = motor4 << 8;
+            data[6] = motor4 >> 8;
             data[7] = motor4;
         }
         if (CAN_Transmit(group->can_instance) != HAL_OK)
@@ -339,13 +372,14 @@ void DJI_Motor_Decode(CAN_Instance_t *can_instance)
 
     /* CAN Frame Process*/
     motor->last_tick = motor->current_tick;
-    motor->current_tick = data[0] << 8 | data[1];
-    motor->current_vel_rpm = (data[2] << 8 | data[3]) * motor->reduction_ratio;
-    motor->current_torq = data[4] << 8 | data[5];
+    motor->current_tick = (data[0] << 8 | data[1]);
+    motor->current_vel_rpm = (int16_t) ((data[2] << 8 | data[3])) * motor->reduction_ratio;
+    motor->current_torq = (int16_t)( data[4] << 8 | data[5]);
     motor->temp = data[6];
 
+    motor->absolute_angle_rad = motor->current_tick - motor->encoder_offset;
     /* absolute angle */
-    motor->absolute_angle_rad = (motor->current_tick + motor->encoder_offset) / DJI_MAX_TICKS * (2 * PI);
+    __MAP(motor->absolute_angle_rad, 0, 8192, -PI, PI);
 
     /* angle wrap */
     if (motor->current_tick - motor->last_tick > DJI_HALF_MAX_TICKS)

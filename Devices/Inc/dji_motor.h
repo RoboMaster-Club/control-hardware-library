@@ -18,7 +18,7 @@
 #define M2006_REDUCTION_RATIO (1.0f/36.0f)
 
 typedef enum DJI_Motor_Type {
-    GM6020,
+    GM6020, // -30000 to 30000
     M3508,
     M2006,
 } DJI_Motor_Type_t;
@@ -27,7 +27,7 @@ typedef struct DJI_Motor_Stats_s {
     /* CAN Frame Info */
     uint16_t current_tick;
 	uint16_t last_tick;
-	int16_t current_vel_rpm;
+	float current_vel_rpm;
 	int16_t current_torq;
     uint8_t temp;
 	
@@ -53,6 +53,7 @@ typedef struct dji_motor
     Motor_Reversal_t is_reversed;
     uint8_t vel_unit_rpm;
     uint8_t pos_abs_ctrl;
+    uint8_t disabled;
     DJI_Motor_Stats_t *stats;
 
     /* Motor Controller */
@@ -65,6 +66,7 @@ typedef struct dji_motor
     void (*set_current)(struct dji_motor *motor, float current);
     void (*set_speed)(struct dji_motor *motor, float speed);
     void (*set_position)(struct dji_motor *motor, float position);
+    void (*disable)(struct dji_motor *motor);
 } DJI_Motor_Handle_t;
 
 typedef enum{

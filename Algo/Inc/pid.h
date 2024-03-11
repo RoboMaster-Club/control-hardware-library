@@ -13,7 +13,6 @@ typedef struct pid_t
     float ref;
     
     float prev_error;
-    float error_sum;
 
     float output;
 } PID_t;
