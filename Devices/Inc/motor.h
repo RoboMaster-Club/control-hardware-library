@@ -21,13 +21,11 @@ typedef struct
     uint16_t rx_id; // use can_id for general devices
     uint8_t speed_controller_id; // use speed_contrller_id for dji motors
     uint16_t offset;
-    uint8_t vel_unit_rpm; // 0 for dps, 1 for rpm
-    uint8_t pos_abs_ctrl; // 0 for total angle, 1 for absolute
     Motor_Reversal_t reversal;
     uint8_t control_mode;
 
-    PID_t position_pid;
-    PID_t speed_pid;
+    PID_t angle_pid;
+    PID_t velocity_pid;
     PID_t torque_pid;
 } Motor_Config_t;
 

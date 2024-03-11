@@ -34,8 +34,6 @@ typedef struct DJI_Motor_Stats_s {
     /* Function Varaibles */
     uint16_t encoder_offset;
     int32_t total_round;
-    float current_vel_dps;
-    float prev_vel_dps;
     float absolute_angle_rad;
     float total_angle_rad;
     float reduction_ratio;
@@ -51,22 +49,15 @@ typedef struct dji_motor
     /* Motor Config */
     uint8_t control_type;
     Motor_Reversal_t is_reversed;
-    uint8_t vel_unit_rpm;
-    uint8_t pos_abs_ctrl;
     uint8_t disabled;
     DJI_Motor_Stats_t *stats;
 
     /* Motor Controller */
-    PID_t *position_pid;
-    PID_t *speed_pid;
+    PID_t *angle_pid;
+    PID_t *velocity_pid;
     PID_t *torque_pid;
 
     int16_t output_current;
-
-    void (*set_current)(struct dji_motor *motor, float current);
-    void (*set_speed)(struct dji_motor *motor, float speed);
-    void (*set_position)(struct dji_motor *motor, float position);
-    void (*disable)(struct dji_motor *motor);
 } DJI_Motor_Handle_t;
 
 typedef enum{
@@ -85,4 +76,8 @@ typedef struct _DJI_Send_Group_s {
 
 DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type);
 void DJI_Motor_Send(void);
+void DJI_Motor_Set_Torque(DJI_Motor_Handle_t *motor, float torque);
+void DJI_Motor_Set_Velocity(DJI_Motor_Handle_t *motor, float velocity);
+void DJI_Motor_Set_Angle(DJI_Motor_Handle_t *motor, float angle);
+void DJI_Motor_Disable(DJI_Motor_Handle_t *motor);
 #endif

@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#define REMOTE_STICK_MAX (660.0f)
+
 enum SwitchPos {UP=1, DOWN, MID};
 
 struct Joystick
