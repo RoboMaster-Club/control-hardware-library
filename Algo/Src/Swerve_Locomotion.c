@@ -51,7 +51,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 6070;
     azimuth_motor_config.speed_controller_id = 1;
     drive_motor_config.speed_controller_id = 1;
-    drive_motor_config.reversal = MOTOR_REVERSAL_NORMAL;
+    drive_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
 
     g_swerve_fl.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_fl.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -59,7 +59,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 4830;
     azimuth_motor_config.speed_controller_id = 2;
     drive_motor_config.speed_controller_id = 2;
-    drive_motor_config.reversal = MOTOR_REVERSAL_NORMAL;
+    drive_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
 
     g_swerve_rl.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_rl.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -71,7 +71,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 1940;
     azimuth_motor_config.speed_controller_id = 3;
     drive_motor_config.speed_controller_id = 3;
-    drive_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
+    drive_motor_config.reversal = MOTOR_REVERSAL_NORMAL;
     
     g_swerve_rr.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_rr.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -79,7 +79,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 5450;
     azimuth_motor_config.speed_controller_id = 4;
     drive_motor_config.speed_controller_id = 4;
-    drive_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
+    drive_motor_config.reversal = MOTOR_REVERSAL_NORMAL;
 
     g_swerve_fr.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_fr.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -207,7 +207,7 @@ void Set_Module_Output(Swerve_Module_t *swerve_module, Module_State_t desired_st
     DJI_Motor_Set_Angle(swerve_module->azimuth_motor,desired_state.angle);
     DJI_Motor_Set_Velocity(swerve_module->drive_motor,desired_state.speed* 60 / (PI * Wheel_Diameter));
 
-    // Module_State_t optimized_module_state = Optimize_Module_Angle(desired_state, swerve_module->azimuth_motor->stats->absolute_angle_rad);
+    // Module_State_t optimized_module_state = Optimize_Module_Angle(desired_state, swerve_module->azimuth_motor->stats->absolute_angle_rad_original);
     // DJI_Motor_Set_Angle(swerve_module->azimuth_motor,optimized_module_state.angle);
     // DJI_Motor_Set_Velocity(swerve_module->drive_motor,optimized_module_state.speed);
 }

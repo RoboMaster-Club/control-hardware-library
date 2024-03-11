@@ -188,6 +188,34 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     return motor_handle;
 }
 
+float DJI_Motor_Get_Angle(DJI_Motor_Handle_t *motor_handle)
+{
+    switch (motor_handle->is_reversed)
+    {
+    case MOTOR_REVERSAL_NORMAL:
+        return motor_handle->stats->total_angle_rad;
+        break;
+    case MOTOR_REVERSAL_REVERSED:
+        return -motor_handle->stats->total_angle_rad;
+        break;
+    }
+    return -1;
+}
+
+float DJI_Motor_Get_Velocity(DJI_Motor_Handle_t *motor_handle)
+{
+    switch (motor_handle->is_reversed)
+    {
+    case MOTOR_REVERSAL_NORMAL:
+        return motor_handle->stats->current_vel_rpm;
+        break;
+    case MOTOR_REVERSAL_REVERSED:
+        return -motor_handle->stats->current_vel_rpm;
+        break;
+    }
+    return -1;
+}
+
 void DJI_Motor_Set_Angle(DJI_Motor_Handle_t *motor_handle, float angle)
 {
     motor_handle->disabled = 0;
