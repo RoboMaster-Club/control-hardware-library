@@ -191,7 +191,17 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
 void DJI_Motor_Set_Angle(DJI_Motor_Handle_t *motor_handle, float angle)
 {
     motor_handle->disabled = 0;
-    motor_handle->angle_pid->ref = angle;
+    switch (motor_handle->is_reversed)
+    {
+    case MOTOR_REVERSAL_NORMAL:
+        motor_handle->angle_pid->ref = angle;
+        break;
+    case MOTOR_REVERSAL_REVERSED:
+        motor_handle->angle_pid->ref = -angle;
+        break;
+    default:
+        break;
+    }
 }
 
 void DJI_Motor_Set_Velocity(DJI_Motor_Handle_t *motor_handle, float velocity)
