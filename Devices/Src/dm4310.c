@@ -67,7 +67,7 @@ void DM4310_EnableMotor(uint8_t can_bus, uint32_t id)
     data[5] = 0xFF;
     data[6] = 0xFF;
     data[7] = 0xFC;
-    CAN_BSP_SendTOQueue(can_bus, id, data);
+    CAN_SendTOQueue(can_bus, id, data);
 }
 
 void DM4310_DisableMotor(uint8_t can_bus, uint32_t id)
@@ -81,7 +81,7 @@ void DM4310_DisableMotor(uint8_t can_bus, uint32_t id)
     data[5] = 0xFF;
     data[6] = 0xFF;
     data[7] = 0xFD;
-    CAN_BSP_SendTOQueue(can_bus, id, data);
+    CAN_SendTOQueue(can_bus, id, data);
 }
 
 void DM4310_CtrlMIT(uint8_t can_bus, uint32_t id,
@@ -106,7 +106,7 @@ void DM4310_CtrlMIT(uint8_t can_bus, uint32_t id,
     data[6] = ((kd_temp & 0xF) << 4) | (torq_temp >> 8);
     data[7] = torq_temp;
 
-    CAN_BSP_SendTOQueue(can_bus, id, data);
+    CAN_SendTOQueue(can_bus, id, data);
 }
 void DM4310_CtrlPosVel()
 {

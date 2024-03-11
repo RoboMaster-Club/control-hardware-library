@@ -56,7 +56,7 @@ typedef struct
 
 
 extern Remote_t g_remote;
-extern void RemoteInit(void);
+extern void Remote_Init(void);
 extern void Remote_BufferProcess(void);
 
 #endif /* __REMOTE_H */

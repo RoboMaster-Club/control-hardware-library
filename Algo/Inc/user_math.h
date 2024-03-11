@@ -12,4 +12,13 @@
 
 #define DEG_TO_RAD 3.14159f / 180.0f
 
+#define __MAP(x, in_min, in_max, out_min, out_max) do\
+                                                { \
+                                                if (x > in_max) { x -= in_max; } \
+                                                else if (x < -in_max) {x += in_max;} \
+                                                x = ((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);\
+                                                } \
+                                                while(0);
+                    
+
 #endif

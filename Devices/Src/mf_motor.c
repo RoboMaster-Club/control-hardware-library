@@ -46,14 +46,14 @@ void MF_Motor_EnableMotor(uint8_t can_bus, uint8_t id)
 {
     uint8_t data[8];
     data[0] = 0x88;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
 void MF_Motor_DisableMotor(uint8_t can_bus, uint8_t id)
 {
     uint8_t data[8];
     data[0] = 0x80;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
 void MF_Motor_GetPIDParam(uint8_t can_bus, uint8_t id)
@@ -67,7 +67,7 @@ void MF_Motor_GetPIDParam(uint8_t can_bus, uint8_t id)
     data[5] = 0x00;
     data[6] = 0x00;
     data[7] = 0x00;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
 void MF_Motor_PIDToRam(uint8_t can_bus, uint8_t id,
@@ -84,7 +84,7 @@ void MF_Motor_PIDToRam(uint8_t can_bus, uint8_t id,
     data[5] = ki_vel;
     data[6] = kp_torq;
     data[7] = ki_torq;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
 void MF_Motor_TorqueCtrl(uint8_t can_bus, uint8_t id, int16_t torq)
@@ -98,7 +98,7 @@ void MF_Motor_TorqueCtrl(uint8_t can_bus, uint8_t id, int16_t torq)
     data[5] = (torq >> 8) & 0xFF;
     data[6] = 0x00;
     data[7] = 0x00;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
 void MF_Motor_VelocityCtrl(uint8_t can_bus, uint8_t id, int32_t vel)
@@ -112,7 +112,7 @@ void MF_Motor_VelocityCtrl(uint8_t can_bus, uint8_t id, int32_t vel)
     data[5] = (vel >> 8) & 0xFF;
     data[6] = (vel >> 16) & 0xFF;
     data[7] = (vel >> 24) & 0xFF;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }
 
 void MF_Motor_PositionCtrl(uint8_t can_bus, uint8_t id, int32_t pos)
@@ -126,5 +126,5 @@ void MF_Motor_PositionCtrl(uint8_t can_bus, uint8_t id, int32_t pos)
     data[5] = (pos >> 8) & 0xFF;
     data[6] = (pos >> 16) & 0xFF;
     data[7] = (pos >> 24) & 0xFF;
-    CAN_BSP_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
+    CAN_SendTOQueue(can_bus, SINGLE_MOTOR_CTRL_STD + id, data);
 }

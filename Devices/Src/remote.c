@@ -51,7 +51,7 @@ void Remote_BufferProcess()
 	}
 }
 
-void RemoteInit(void)
+void Remote_Init(void)
 {
 	HAL_UART_Receive_DMA(&huart3, remote_buffer, 18);
 }
