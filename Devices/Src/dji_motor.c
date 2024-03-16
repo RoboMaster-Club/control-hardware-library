@@ -74,10 +74,9 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     motor_stats->temp = 0;
     motor_handle->stats = motor_stats;
     motor_handle->output_current = 0;
-
     switch (config->control_mode)
     {
-    case SPEED_CONTROL:
+    case (VELOCITY_CONTROL):
         motor_handle->velocity_pid = malloc(sizeof(PID_t));
         memcpy(motor_handle->velocity_pid, &config->velocity_pid, sizeof(PID_t));
         break;
@@ -85,7 +84,7 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
         motor_handle->angle_pid = malloc(sizeof(PID_t));
         memcpy(motor_handle->angle_pid, &config->angle_pid, sizeof(PID_t));
         break;
-    case SPEED_CONTROL | POSITION_CONTROL:
+    case (VELOCITY_CONTROL | POSITION_CONTROL):
         motor_handle->velocity_pid = malloc(sizeof(PID_t));
         motor_handle->angle_pid = malloc(sizeof(PID_t));
         memcpy(motor_handle->velocity_pid, &config->velocity_pid, sizeof(PID_t));
@@ -95,7 +94,7 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
         motor_handle->torque_pid = malloc(sizeof(PID_t));
         memmove(motor_handle->torque_pid, &config->torque_pid, sizeof(PID_t));
         break;
-    case SPEED_CONTROL | POSITION_CONTROL | TORQUE_CONTROL:
+    case VELOCITY_CONTROL | POSITION_CONTROL | TORQUE_CONTROL:
         motor_handle->velocity_pid = malloc(sizeof(PID_t));
         motor_handle->angle_pid = malloc(sizeof(PID_t));
         motor_handle->torque_pid = malloc(sizeof(PID_t));
@@ -193,10 +192,10 @@ float DJI_Motor_Get_Angle(DJI_Motor_Handle_t *motor_handle)
     switch (motor_handle->is_reversed)
     {
     case MOTOR_REVERSAL_NORMAL:
-        return motor_handle->stats->total_angle_rad;
+        return motor_handle->stats->absolute_angle_rad;
         break;
     case MOTOR_REVERSAL_REVERSED:
-        return -motor_handle->stats->total_angle_rad;
+        return -motor_handle->stats->absolute_angle_rad;
         break;
     }
     return -1;
@@ -272,7 +271,7 @@ void DJI_Motor_Current_Calc()
         case 0:
             switch (motor->control_type)
             {
-            case SPEED_CONTROL:
+            case VELOCITY_CONTROL:
                 motor->output_current = PID(motor->velocity_pid, motor->velocity_pid->ref - (float)motor->stats->current_vel_rpm);
                 break;
             case POSITION_CONTROL:
@@ -289,7 +288,7 @@ void DJI_Motor_Current_Calc()
                 break;
             case TORQUE_CONTROL:
                 break;
-            case SPEED_CONTROL | POSITION_CONTROL:
+            case VELOCITY_CONTROL | POSITION_CONTROL:
                 break;
             default:
                 break;

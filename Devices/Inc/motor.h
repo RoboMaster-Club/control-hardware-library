@@ -4,7 +4,7 @@
 #include "pid.h"
 #include <stdint.h>
 
-#define SPEED_CONTROL (0b001)
+#define VELOCITY_CONTROL (0b001)
 #define POSITION_CONTROL (0b010)
 #define TORQUE_CONTROL (0b100)
 

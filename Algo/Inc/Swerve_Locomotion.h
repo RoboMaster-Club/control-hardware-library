@@ -7,8 +7,8 @@
 #include "math.h"
 
 // PHYSICAL CONSTANTS
-#define SWERVE_MAX_SPEED 2.0f          // m/s
-#define SWERVE_MAX_ANGLUAR_SPEED 90.0f // deg/s
+#define SWERVE_MAX_SPEED 1.0f          // m/s
+#define SWERVE_MAX_ANGLUAR_SPEED 3.14f // rad/s
 #define TRACK_WIDTH 0.34f              // m, measured wheel to wheel (side to side)
 #define WHEEL_BASE 0.34f               // m, measured wheel to wheel (up and down)
 #define Wheel_Diameter 0.12f

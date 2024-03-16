@@ -6,7 +6,8 @@
 Swerve_Module_t g_swerve_fl, g_swerve_fr, g_swerve_rl, g_swerve_rr;
 float last_swerve_angle[4] = {.0f, .0f, .0f, .0f};
 float azimuth_zero_offset_array[4] = {0.0f, 0.0f, 0.0f, 0.0f}; // encoder ticks
-Module_State_Array_t kanzhege;
+Module_State_t kanzhege;
+Module_State_t yekankanzhege;
 // Inverse kinematics matrix for a 4 module swerve, modules defined counterclockwise (like quadrants)
 float swerve_state_matrix[8][3] = {
     {0, 1, -(WHEEL_BASE / 2)}, // front left id 1
@@ -30,18 +31,18 @@ void Swerve_Init()
         .angle_pid =
             {
                 .kp = 28000.0f,
-                .ki = 1.2f,
-                .output_limit = 28000,
+                .ki = .0f,
+                .output_limit = GM6020_MAX_CURRENT,
                 .integral_limit = 1000.0f,
             },
     };
 
     Motor_Config_t drive_motor_config = {
-        .control_mode = SPEED_CONTROL,
+        .control_mode = VELOCITY_CONTROL,
         .velocity_pid =
             {
                 .kp = 500.0f,
-                .output_limit = 16000,
+                .output_limit = M3508_MAX_CURRENT,
             }};
     azimuth_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
     // left side
@@ -152,11 +153,6 @@ Module_State_Array_t Chassis_Speeds_To_Module_States(Chassis_Speeds_t chassis_sp
                 calculated_module_states.states[i].angle = angle;
                 last_swerve_angle[i] = angle;
             }
-            else
-            {
-                x = 0.0f;
-                y = 1.0f;
-            }
 
             calculated_module_states.states[i].speed = speed;
             calculated_module_states.states[i].angle = last_swerve_angle[i];
@@ -189,12 +185,17 @@ Module_State_t Optimize_Module_Angle(Module_State_t input_state, float measured_
 
     if (wheel_angle_delta > PI / 2 || wheel_angle_delta < -PI / 2)
     { // if the delta is more than 90 degrees
-        optimized_module_state.speed = -1 * input_state.speed * 60 / (PI * Wheel_Diameter);
-        optimized_module_state.angle = input_state.angle + (wheel_angle_delta > 0) ? -PI : PI;
+        optimized_module_state.speed = -1.0f * input_state.speed * 60.0f / (PI * Wheel_Diameter);
+        optimized_module_state.angle = input_state.angle + ((wheel_angle_delta > 0) ? -PI : PI);
     }
+    // else if(wheel_angle_delta>PI || wheel_angle_delta<-PI)
+    // {
+    //     optimized_module_state.speed = 1.0f * input_state.speed * 60.0f / (PI * Wheel_Diameter);
+	// 	optimized_module_state.angle = input_state.angle + ((wheel_angle_delta>0) ? -2*PI:2*PI);
+    // }
     else
     {
-        optimized_module_state.speed = 1 * input_state.speed * 60 / (PI * Wheel_Diameter);
+        optimized_module_state.speed = 1.0f * input_state.speed * 60.0f / (PI * Wheel_Diameter);
         optimized_module_state.angle = input_state.angle;
     }
 
@@ -204,12 +205,13 @@ Module_State_t Optimize_Module_Angle(Module_State_t input_state, float measured_
 /*Command motors to output calculated module state*/
 void Set_Module_Output(Swerve_Module_t *swerve_module, Module_State_t desired_state)
 {
-    DJI_Motor_Set_Angle(swerve_module->azimuth_motor,desired_state.angle);
-    DJI_Motor_Set_Velocity(swerve_module->drive_motor,desired_state.speed* 60 / (PI * Wheel_Diameter));
+    // DJI_Motor_Set_Angle(swerve_module->azimuth_motor,desired_state.angle);
+    // DJI_Motor_Set_Velocity(swerve_module->drive_motor,desired_state.speed* 60 / (PI * Wheel_Diameter));
 
-    // Module_State_t optimized_module_state = Optimize_Module_Angle(desired_state, swerve_module->azimuth_motor->stats->absolute_angle_rad_original);
-    // DJI_Motor_Set_Angle(swerve_module->azimuth_motor,optimized_module_state.angle);
-    // DJI_Motor_Set_Velocity(swerve_module->drive_motor,optimized_module_state.speed);
+    Module_State_t optimized_module_state = Optimize_Module_Angle(desired_state, DJI_Motor_Get_Angle(swerve_module->azimuth_motor));
+    kanzhege = optimized_module_state;
+    DJI_Motor_Set_Angle(swerve_module->azimuth_motor,optimized_module_state.angle);
+    DJI_Motor_Set_Velocity(swerve_module->drive_motor,optimized_module_state.speed);
 }
 
 #pragma message "change this comment"
@@ -220,8 +222,7 @@ void Swerve_Drive(float x, float y, float omega)
     y *= SWERVE_MAX_SPEED;
     omega *= SWERVE_MAX_ANGLUAR_SPEED; // convert to rad/s
     Chassis_Speeds_t desired_chassis_speeds = {.x = x, .y = y, .omega = omega};
-    kanzhege = Chassis_Speeds_To_Module_States(desired_chassis_speeds);
-    Set_Desired_States(kanzhege);
+    Set_Desired_States(Chassis_Speeds_To_Module_States(desired_chassis_speeds));
 
     Set_Module_Output(&g_swerve_fr, g_swerve_fr.module_state);
     Set_Module_Output(&g_swerve_fl, g_swerve_fl.module_state);

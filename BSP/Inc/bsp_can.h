@@ -13,7 +13,7 @@
 #include "dm4310.h"
 #include "mf_motor.h"
 
-#define CAN_MAX_DEVICE 5
+#define CAN_MAX_DEVICE (8)
 
 typedef struct _
 {

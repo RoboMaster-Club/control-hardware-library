@@ -10,6 +10,10 @@
 #define MAX_DJI_MOTOR_GROUPS (6) // realloac will be called to shrink the array
 #define DJI_TX_ID_PLACEHOLDER (0x00)
 
+#define GM6020_MAX_CURRENT (28000) // -30000 ~ 30000 
+#define M3508_MAX_CURRENT (16000) // -16384 ~ 16384
+#define M2006_MAX_CURRENT (9000) // -10000 ~ 10000
+
 #define DJI_MAX_TICKS (8191.0f)
 #define DJI_HALF_MAX_TICKS (4096)
 
