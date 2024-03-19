@@ -62,7 +62,11 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
     motor_handle->can_bus = config->can_bus;
     motor_handle->speed_controller_id = config->speed_controller_id;
     motor_handle->control_type = config->control_mode;
-    motor_handle->is_reversed = config->reversal;
+    motor_handle->motor_reversal = config->motor_reversal;
+    motor_handle->use_external_feedback = config->use_external_feedback;
+    motor_handle->external_feedback_dir = config->external_feedback_dir;
+    motor_handle->external_angle_feedback_ptr = config->external_angle_feedback_ptr;
+    motor_handle->external_velocity_feedback_ptr = config->external_velocity_feedback_ptr;
 
     DJI_Motor_Stats_t *motor_stats = malloc(sizeof(DJI_Motor_Stats_t));
     motor_stats->encoder_offset = config->offset;
@@ -189,7 +193,7 @@ DJI_Motor_Handle_t *DJI_Motor_Init(Motor_Config_t *config, DJI_Motor_Type_t type
 
 float DJI_Motor_Get_Angle(DJI_Motor_Handle_t *motor_handle)
 {
-    switch (motor_handle->is_reversed)
+    switch (motor_handle->motor_reversal)
     {
     case MOTOR_REVERSAL_NORMAL:
         return motor_handle->stats->absolute_angle_rad;
@@ -203,7 +207,7 @@ float DJI_Motor_Get_Angle(DJI_Motor_Handle_t *motor_handle)
 
 float DJI_Motor_Get_Velocity(DJI_Motor_Handle_t *motor_handle)
 {
-    switch (motor_handle->is_reversed)
+    switch (motor_handle->motor_reversal)
     {
     case MOTOR_REVERSAL_NORMAL:
         return motor_handle->stats->current_vel_rpm;
@@ -218,7 +222,7 @@ float DJI_Motor_Get_Velocity(DJI_Motor_Handle_t *motor_handle)
 void DJI_Motor_Set_Angle(DJI_Motor_Handle_t *motor_handle, float angle)
 {
     motor_handle->disabled = 0;
-    switch (motor_handle->is_reversed)
+    switch (motor_handle->motor_reversal)
     {
     case MOTOR_REVERSAL_NORMAL:
         motor_handle->angle_pid->ref = angle;
@@ -234,7 +238,7 @@ void DJI_Motor_Set_Angle(DJI_Motor_Handle_t *motor_handle, float angle)
 void DJI_Motor_Set_Velocity(DJI_Motor_Handle_t *motor_handle, float velocity)
 {
     motor_handle->disabled = 0;
-    switch (motor_handle->is_reversed)
+    switch (motor_handle->motor_reversal)
     {
     case MOTOR_REVERSAL_NORMAL:
         motor_handle->velocity_pid->ref = velocity;
@@ -263,6 +267,20 @@ void DJI_Motor_Current_Calc()
     for (int i = 0; i < g_dji_motor_count; i++)
     {
         DJI_Motor_Handle_t *motor = g_dji_motors[i];
+        float angle_feedback = 0;
+        float velocity_feedback = 0;
+        // assign feedback depending on whether the motor uses an external sensor (like imu)
+        switch (motor->use_external_feedback)
+        {
+        case 1:
+            angle_feedback = motor->external_feedback_dir * ((float)*(motor->external_angle_feedback_ptr));
+            velocity_feedback = motor->external_feedback_dir * ((float)*(motor->external_velocity_feedback_ptr));
+            break;
+        case 0:
+            angle_feedback = motor->stats->absolute_angle_rad;
+            velocity_feedback = motor->stats->current_vel_rpm;
+            break;
+        }
         switch (motor->disabled)
         {
         case 1:
@@ -272,24 +290,44 @@ void DJI_Motor_Current_Calc()
             switch (motor->control_type)
             {
             case VELOCITY_CONTROL:
-                motor->output_current = PID(motor->velocity_pid, motor->velocity_pid->ref - (float)motor->stats->current_vel_rpm);
+            {
+                motor->output_current = PID(motor->velocity_pid, motor->velocity_pid->ref - velocity_feedback);
                 break;
+            }
             case POSITION_CONTROL:
-                float error = motor->angle_pid->ref - motor->stats->absolute_angle_rad;
-                if (error >= PI)
-                {
-                    error -= 2 * PI;
-                }
-                else if (error < -PI)
-                {
-                    error += 2 * PI;
-                }
+            {
+                float error = motor->angle_pid->ref - angle_feedback;
+                __MAP_ANGLE_TO_UNIT_CIRCLE(error);
                 motor->output_current = PID(motor->angle_pid, error);
                 break;
+            }
             case TORQUE_CONTROL:
+            {
                 break;
-            case VELOCITY_CONTROL | POSITION_CONTROL:
+            }
+            case POSITION_VELOCITY_SERIES:
+            {
+                // angle pid
+                float error = motor->angle_pid->ref - angle_feedback;
+                __MAP_ANGLE_TO_UNIT_CIRCLE(error);
+                // angle pid output as velocity ref
+                float output_vel = PID(motor->angle_pid, error);
+                // velocity pid
+                motor->output_current = PID(motor->velocity_pid, output_vel - velocity_feedback);
                 break;
+            }
+            case POSITION_VELOCITY_PARALLEL:
+            {
+                // angle pid
+                float error = motor->angle_pid->ref - angle_feedback;
+                __MAP_ANGLE_TO_UNIT_CIRCLE(error); // wrap angle error to (-pi, pi)
+                float angle_pid_output = PID(motor->angle_pid, error);
+                // velocity pid
+                float velocity_pid_output = PID(motor->velocity_pid, motor->velocity_pid->ref - velocity_feedback);
+                // add parallel output
+                motor->output_current = angle_pid_output + velocity_pid_output;
+                break;
+            }
             default:
                 break;
             }

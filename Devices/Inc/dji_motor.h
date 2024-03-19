@@ -52,9 +52,17 @@ typedef struct dji_motor
     
     /* Motor Config */
     uint8_t control_type;
-    Motor_Reversal_t is_reversed;
+    Motor_Reversal_t motor_reversal;
     uint8_t disabled;
     DJI_Motor_Stats_t *stats;
+
+    /* External Sensor*/
+    // external sensor information like imu or external encoders
+    uint8_t use_external_feedback;  // 0 for no, 1 for yes
+    int8_t external_feedback_dir;  // 0 for no, 1 for yes
+    float *external_angle_feedback_ptr;  // pointer to the external angle feedback
+    float *external_velocity_feedback_ptr;  // pointer to the external velocity feedback
+
 
     /* Motor Controller */
     PID_t *angle_pid;
