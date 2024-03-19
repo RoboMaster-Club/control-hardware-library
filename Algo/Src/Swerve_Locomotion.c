@@ -73,7 +73,7 @@ void Swerve_Init()
     azimuth_motor_config.speed_controller_id = 3;
     drive_motor_config.speed_controller_id = 3;
     drive_motor_config.motor_reversal = MOTOR_REVERSAL_NORMAL;
-    
+
     g_swerve_rr.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_rr.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
 
@@ -90,17 +90,14 @@ void Swerve_Init()
 Module_State_Array_t Desaturate_Wheel_Speeds(Module_State_Array_t module_state_array)
 {
     float highest_speed = fabsf(module_state_array.states[0].speed);
-    for (int i = 0; i < NUMBER_OF_MODULES; i++)
+    for (int i = 1; i < NUMBER_OF_MODULES; i++) // start from 1 to find the highest speed
     {
-        if (fabsf(module_state_array.states[i].speed) > fabsf(highest_speed))
-        {
-            highest_speed = module_state_array.states[i].speed;
-        }
+        highest_speed = fmaxf(highest_speed, fabsf(module_state_array.states[i].speed));
     }
-    if (fabs(highest_speed) > 0.01f)
+    if (highest_speed > 0.01f) // avoid division by zero
     {
-        float desaturation_coefficient = fabs(SWERVE_MAX_SPEED / highest_speed);
-        Module_State_Array_t desaturated_module_states;
+        float desaturation_coefficient = fabsf(SWERVE_MAX_SPEED / highest_speed);
+        Module_State_Array_t desaturated_module_states = {0}; // initialize the struct to zero
 
         for (int i = 0; i < NUMBER_OF_MODULES; i++)
         {
@@ -112,6 +109,7 @@ Module_State_Array_t Desaturate_Wheel_Speeds(Module_State_Array_t module_state_a
     }
     return module_state_array;
 }
+
 
 /* Convert chassis speeds to module states using inverse kinematics */
 Module_State_Array_t Chassis_Speeds_To_Module_States(Chassis_Speeds_t chassis_speeds)
@@ -144,18 +142,20 @@ Module_State_Array_t Chassis_Speeds_To_Module_States(Chassis_Speeds_t chassis_sp
         {
             float x = module_states_matrix[i * 2 + 1];
             float y = module_states_matrix[i * 2];
+            float speed = hypotf(x, y);
 
-            float speed = hypotf(x, y); 
+            calculated_module_states.states[i].speed = speed;
+
             if (speed > 1e-6f)
             {
-                float angle = atan2f(y, x);// huge bug here
-
+                float angle = atan2f(y, x);
                 calculated_module_states.states[i].angle = angle;
                 last_swerve_angle[i] = angle;
             }
-
-            calculated_module_states.states[i].speed = speed;
-            calculated_module_states.states[i].angle = last_swerve_angle[i];
+            else
+            {
+                calculated_module_states.states[i].angle = last_swerve_angle[i];
+            }
         }
     }
     return calculated_module_states;
@@ -191,7 +191,7 @@ Module_State_t Optimize_Module_Angle(Module_State_t input_state, float measured_
     // else if(wheel_angle_delta>PI || wheel_angle_delta<-PI)
     // {
     //     optimized_module_state.speed = 1.0f * input_state.speed * 60.0f / (PI * Wheel_Diameter);
-	// 	optimized_module_state.angle = input_state.angle + ((wheel_angle_delta>0) ? -2*PI:2*PI);
+    // 	optimized_module_state.angle = input_state.angle + ((wheel_angle_delta>0) ? -2*PI:2*PI);
     // }
     else
     {
@@ -210,8 +210,8 @@ void Set_Module_Output(Swerve_Module_t *swerve_module, Module_State_t desired_st
 
     Module_State_t optimized_module_state = Optimize_Module_Angle(desired_state, DJI_Motor_Get_Angle(swerve_module->azimuth_motor));
     kanzhege = optimized_module_state;
-    DJI_Motor_Set_Angle(swerve_module->azimuth_motor,optimized_module_state.angle);
-    DJI_Motor_Set_Velocity(swerve_module->drive_motor,optimized_module_state.speed);
+    DJI_Motor_Set_Angle(swerve_module->azimuth_motor, optimized_module_state.angle);
+    DJI_Motor_Set_Velocity(swerve_module->drive_motor, optimized_module_state.speed);
 }
 
 #pragma message "change this comment"
