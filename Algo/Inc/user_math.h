@@ -20,5 +20,10 @@
                                                 } \
                                                 while(0);
                     
-
+#define __MAP_ANGLE_TO_UNIT_CIRCLE(x) do\
+                                    {\
+                                        while (error >= PI) { error -= 2 * PI; }\
+                                        while (error < -PI) { error += 2 * PI; }\
+                                    }\
+                                    while(0);
 #endif
