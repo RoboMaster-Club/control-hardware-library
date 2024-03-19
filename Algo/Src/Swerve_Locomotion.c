@@ -44,7 +44,7 @@ void Swerve_Init()
                 .kp = 500.0f,
                 .output_limit = M3508_MAX_CURRENT,
             }};
-    azimuth_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
+    azimuth_motor_config.motor_reversal = MOTOR_REVERSAL_REVERSED;
     // left side
     azimuth_motor_config.can_bus = 1;
     drive_motor_config.can_bus = 1;
@@ -52,7 +52,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 6070;
     azimuth_motor_config.speed_controller_id = 1;
     drive_motor_config.speed_controller_id = 1;
-    drive_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
+    drive_motor_config.motor_reversal = MOTOR_REVERSAL_REVERSED;
 
     g_swerve_fl.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_fl.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -60,7 +60,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 4830;
     azimuth_motor_config.speed_controller_id = 2;
     drive_motor_config.speed_controller_id = 2;
-    drive_motor_config.reversal = MOTOR_REVERSAL_REVERSED;
+    drive_motor_config.motor_reversal = MOTOR_REVERSAL_REVERSED;
 
     g_swerve_rl.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_rl.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -72,7 +72,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 1940;
     azimuth_motor_config.speed_controller_id = 3;
     drive_motor_config.speed_controller_id = 3;
-    drive_motor_config.reversal = MOTOR_REVERSAL_NORMAL;
+    drive_motor_config.motor_reversal = MOTOR_REVERSAL_NORMAL;
     
     g_swerve_rr.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_rr.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
@@ -80,7 +80,7 @@ void Swerve_Init()
     azimuth_motor_config.offset = 5450;
     azimuth_motor_config.speed_controller_id = 4;
     drive_motor_config.speed_controller_id = 4;
-    drive_motor_config.reversal = MOTOR_REVERSAL_NORMAL;
+    drive_motor_config.motor_reversal = MOTOR_REVERSAL_NORMAL;
 
     g_swerve_fr.azimuth_motor = DJI_Motor_Init(&azimuth_motor_config, GM6020);
     g_swerve_fr.drive_motor = DJI_Motor_Init(&drive_motor_config, M3508);
