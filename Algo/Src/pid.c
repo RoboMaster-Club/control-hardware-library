@@ -31,7 +31,7 @@ float PID(PID_t *pid, float error)
     pid->i_out += error * pid->ki;
     __MAX_LIMIT(pid->i_out, -pid->integral_limit, pid->integral_limit);
     
-    pid->output = pid->kp * error + pid->i_out + pid->kd * (error - pid->prev_error);
+    pid->output = pid->kp * error + pid->i_out + pid->kd * (error - pid->prev_error) + pid->kf * pid->ref;
     
     pid->prev_error = error;
     

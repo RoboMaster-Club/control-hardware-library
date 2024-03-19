@@ -6,6 +6,7 @@ typedef struct pid_t
     float kp;
     float ki;
     float kd;
+    float kf;
     float integral_limit;
     float i_out;
     float output_limit;
